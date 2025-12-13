@@ -462,7 +462,7 @@ reviewer_agent = {
 
 # ---------- 3.  Main agent ----------
 llm = ChatOllama(
-    model="qwen3:0.6b",
+    model="qwen3-coder:30b",
     base_url="http://localhost:11434",
     temperature=0,
 )
