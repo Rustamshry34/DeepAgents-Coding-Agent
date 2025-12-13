@@ -15,11 +15,15 @@ An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), 
 
 ## ⚙️ 30-second setup
 
+Clone & enter
+```git clone https://github.com/your-org/deepagents-coding.git
+cd deepagents-coding```
 
 
-## Fixed Issue
+Install
+```python -m venv .venv && source .venv/bin/activate  # Win: .venv\Scripts\activate
+pip install -r requirements.txt```
 
-This version includes a fix for the issue where simple queries (like "Hi, how are you?") would show nothing in the UI. The problem was in the streaming response handling - when simple queries don't generate proper streaming events, the UI now falls back to direct invocation and handles various response formats.
 
 ## Setup Requirements
 
@@ -28,8 +32,33 @@ This version includes a fix for the issue where simple queries (like "Hi, how ar
 3. Install langchain_ollama: `pip install langchain_ollama`
 4. Set up your Tavily API key as an environment variable: `TAVILY_API_KEY=your_key_here`
 
+## Run Ollama (local LLM)
+
+```ollama pull qwen3-coder:30b
+ollama serve```
+
 ## Running the Application
 
 ```bash
 streamlit run app.py
 ```
+
+## 🧪 Example prompts
+
+| Prompt                                                               | What happens                     |
+| -------------------------------------------------------------------- | -------------------------------- |
+| `Build a FastAPI micro-service with JWT auth and a /search endpoint` | Planner → Coder → Reviewer → ZIP |
+| `Scrape the top 10 Hacker News stories and save to CSV`              | Search → Code → Run → Download   |
+| `Refactor this repo to use SQLModel instead of raw SQL`              | Upload → Review → Rewrite → Diff |
+
+
+## Memory 
+
+Coming soon
+
+
+
+
+
+
+
