@@ -16,12 +16,14 @@ An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), 
 ## ⚙️ 30-second setup
 
 Clone & enter
-```git clone https://github.com/your-org/deepagents-coding.git
+```bash
+git clone https://github.com/your-org/deepagents-coding.git
 cd deepagents-coding```
 
 
 Install
-```python -m venv .venv && source .venv/bin/activate  # Win: .venv\Scripts\activate
+```bash
+python -m venv .venv && source .venv/bin/activate  # Win: .venv\Scripts\activate
 pip install -r requirements.txt```
 
 
@@ -34,7 +36,8 @@ pip install -r requirements.txt```
 
 ## Run Ollama (local LLM)
 
-```ollama pull qwen3-coder:30b
+```bash
+ollama pull qwen3-coder:30b
 ollama serve```
 
 ## Running the Application
