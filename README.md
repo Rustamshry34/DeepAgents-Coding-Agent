@@ -1,4 +1,4 @@
-🧠 DeepAgents Coding Assistant
+# 🧠 DeepAgents Coding Assistant
 
 An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), Tavily search, and sandboxed Docker execution—packed in a gorgeous Streamlit chat UI.
 
@@ -13,8 +13,8 @@ An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), 
 | **Ship**   | Packages the workspace into a downloadable ZIP            |
 
 
-⚙️ 30-second setup
+## ⚙️ 30-second setup
 
 Clone & enter
-```bash git clone https://github.com/your-org/deepagents-coding.git
-cd deepagents-coding```
+`bash git clone https://github.com/your-org/deepagents-coding.git
+cd deepagents-coding`
