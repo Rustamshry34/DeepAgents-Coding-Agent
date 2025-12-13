@@ -21,6 +21,6 @@ Clone & enter
   cd deepagents-coding
 
 Install
-``bash
+```bash
   python -m venv .venv && source .venv/bin/activate  # Win: .venv\Scripts\activate
   pip install -r requirements.txt
