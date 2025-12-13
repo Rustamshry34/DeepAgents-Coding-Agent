@@ -484,26 +484,76 @@ agent = create_deep_agent(
 )
 
 # ---------- 4.  Streamlit UI ----------
+# ---------- 4.  Streamlit UI (improved) ----------
 st.set_page_config(page_title="DeepAgents Coder", layout="centered")
 st.title("🧠 DeepAgents Coding Assistant")
 
+# ---- session state ----
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "last_artifact" not in st.session_state:
+    st.session_state.last_artifact = None
 
+# ---- render history ----
 for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+    with st.chat_message(msg["role"]):
+        _content = msg["content"]
+        # ---- assistant message with extras ----
+        if msg["role"] == "assistant":
+            st.markdown(_content, unsafe_allow_html=True)
+            # artifact badge + download
+            if msg.get("artifact"):
+                st.success("Artifact ready")
+                with open(msg["artifact"], "rb") as f:
+                    st.download_button(
+                        label="📦 Download zip",
+                        data=f,
+                        file_name=Path(msg["artifact"]).name,
+                        mime="application/zip",
+                        key=f"dl_{msg.get('ts', '')}",
+                    )
+            # copy button
+            if st.button("📋 Copy", key=f"cp_{msg.get('ts', '')}"):
+                st.code(_content, language="text")
+        else:  # user
+            st.markdown(_content)
 
+# ---- input ----
 if prompt := st.chat_input("Ask me to build or debug anything…"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        placeholder = st.empty()
-        full_reply = ""
+        message_placeholder = st.empty()
+        full_text = ""
+        # stream agent response
         for chunk in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
             if "messages" in chunk:
                 latest = chunk["messages"][-1].content
-                full_reply = latest
-                placeholder.markdown(full_reply + " ▌")
-        placeholder.markdown(full_reply)
-    st.session_state.messages.append({"role": "assistant", "content": full_reply})
+                # simple character streaming
+                if len(latest) > len(full_text):
+                    delta = latest[len(full_text):]
+                    full_text += delta
+                    message_placeholder.markdown(full_text + "▌")
+        message_placeholder.markdown(full_text)
+
+        # ---- post-process assistant message ----
+        ts = str(st.session_state.get("_msg_counter", 0))
+        st.session_state._msg_counter = int(ts) + 1
+
+        # look for artifact path in the last chunk
+        artifact_path = None
+        if "artifact" in chunk and chunk["artifact"]:
+            artifact_path = chunk["artifact"]
+            st.session_state.last_artifact = artifact_path
+
+        # store message with metadata
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": full_text,
+                "artifact": artifact_path,
+                "ts": ts,
+            }
+        )
