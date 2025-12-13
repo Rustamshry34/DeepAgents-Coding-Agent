@@ -15,12 +15,4 @@ An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), 
 
 ## ⚙️ 30-second setup
 
-Clone & enter
-bash
-  git clone https://github.com/your-org/deepagents-coding.git
-  cd deepagents-coding```
 
-Install
-
-  python -m venv .venv && source .venv/bin/activate  # Win: .venv\Scripts\activate
-  pip install -r requirements.txt```
