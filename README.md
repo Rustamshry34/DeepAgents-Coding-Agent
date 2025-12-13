@@ -17,5 +17,5 @@ An autonomous coding agent powered by LangChain DeepAgents, local LLM (Ollama), 
 
 Clone & enter
 ```bash
-   git clone https://github.com/your-org/deepagents-coding.git
+  git clone https://github.com/your-org/deepagents-coding.git
   cd deepagents-coding```
