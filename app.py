@@ -1,15 +1,16 @@
-
---------------------------------------------------
- # app.py  
---------------------------------------------------
-```python
-import os
-import streamlit as st
 from tavily import TavilyClient
-from langchain_openai import ChatOpenAI
+import subprocess
+import tempfile
+import time
+import streamlit as st
+import shutil
+from pathlib import Path
+import zipfile
+from typing import List, Dict, Any, Literal
+from uuid import uuid4
 from deepagents import create_deep_agent
 from langchain_core.tools import tool
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 
 # ---------- 1.  Tools ----------
 
@@ -433,7 +434,7 @@ def run_manifest(manifest: Dict[str, Any], base_image: str = "python:3.11-slim",
 planner_agent = {
     "name": "planner",
     "description": "Breaks a coding task into small ordered steps.",
-    "prompt": (
+    "system_prompt": (
         "You are a senior architect.  Convert the user request into a numbered "
         "todo list (max 8 steps).  Output ONLY the list, no chatter."
     ),
@@ -442,7 +443,7 @@ planner_agent = {
 coder_agent = {
     "name": "coder",
     "description": "Writes production-ready Python code.",
-    "prompt": (
+    "system_prompt": (
         "You are a world-class Python developer.  Produce clean, type-hinted, "
         "documented code following PEP-8.  Always return ONLY code—no explanation."
     ),
@@ -451,7 +452,7 @@ coder_agent = {
 reviewer_agent = {
     "name": "reviewer",
     "description": "Reviews code for bugs, style, and performance.",
-    "prompt": (
+    "system_prompt": (
         "You are a strict code-reviewer.  Find bugs, suggest fixes, and rate "
         "readability/performance (0-10).  Be concise."
     ),
@@ -459,7 +460,7 @@ reviewer_agent = {
 
 # ---------- 3.  Main agent ----------
 llm = ChatOllama(
-    model="qwen3:4b",
+    model="qwen3:0.6b",
     base_url="http://localhost:11434",
     temperature=0,
 )
@@ -528,13 +529,11 @@ if prompt := st.chat_input("Ask me to build or debug anything…"):
         message_placeholder = st.empty()
         full_text = ""
         # stream agent response
-        for chunk in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
-            if "messages" in chunk:
-                latest = chunk["messages"][-1].content
-                # simple character streaming
-                if len(latest) > len(full_text):
-                    delta = latest[len(full_text):]
-                    full_text += delta
+        for event in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
+            if "messages" in event:
+                msg = event["messages"][-1]
+                if msg.role == "assistant":
+                    full_text = msg.content
                     message_placeholder.markdown(full_text + "▌")
         message_placeholder.markdown(full_text)
 
@@ -544,9 +543,8 @@ if prompt := st.chat_input("Ask me to build or debug anything…"):
 
         # look for artifact path in the last chunk
         artifact_path = None
-        if "artifact" in chunk and chunk["artifact"]:
-            artifact_path = chunk["artifact"]
-            st.session_state.last_artifact = artifact_path
+        if "artifact" in event and event["artifact"]:
+            artifact_path = event["artifact"]
 
         # store message with metadata
         st.session_state.messages.append(
