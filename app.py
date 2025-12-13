@@ -11,11 +11,13 @@ from uuid import uuid4
 from deepagents import create_deep_agent
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
+import os
 
 # ---------- 1.  Tools ----------
 
 # Initialise Tavily client for web search
-tavily_client = TavilyClient(api_key="xxxxxxxxxx")
+tavily_api_key = os.getenv("TAVILY_API_KEY", "xxxxxxxxxx")  # Default to placeholder if not set
+tavily_client = TavilyClient(api_key=tavily_api_key)
 
 # ----------------- Tools -----------------
     
@@ -528,23 +530,62 @@ if prompt := st.chat_input("Ask me to build or debug anything…"):
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_text = ""
+        
         # stream agent response
-        for event in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
-            if "messages" in event:
-                msg = event["messages"][-1]
-                if msg.role == "assistant":
-                    full_text = msg.content
-                    message_placeholder.markdown(full_text + "▌")
-        message_placeholder.markdown(full_text)
+        try:
+            for event in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
+                if "messages" in event:
+                    msg = event["messages"][-1]
+                    if hasattr(msg, 'role') and hasattr(msg, 'content') and msg.role == "assistant":
+                        full_text = msg.content
+                        if full_text:  # Only update if there's content
+                            message_placeholder.markdown(full_text + "▌")
+            
+            # Final update with full_text (or a fallback if still empty)
+            if not full_text:
+                # Try to get response from the agent directly if streaming didn't work
+                response = agent.invoke({"messages": [{"role": "user", "content": prompt}]})
+                
+                # Handle different possible response formats
+                if isinstance(response, dict):
+                    if "messages" in response and response["messages"]:
+                        msgs = response["messages"]
+                        # Get the last message
+                        last_msg = msgs[-1] if isinstance(msgs, list) else msgs
+                        if hasattr(last_msg, 'content'):
+                            full_text = last_msg.content
+                        elif isinstance(last_msg, dict) and "content" in last_msg:
+                            full_text = last_msg["content"]
+                    elif "content" in response:
+                        full_text = response["content"]
+                    elif "output" in response:
+                        full_text = response["output"]
+                elif hasattr(response, 'get') and response.get("messages"):
+                    msgs = response["messages"]
+                    if msgs and hasattr(msgs[-1], 'content'):
+                        full_text = msgs[-1].content
+                elif hasattr(response, 'content'):
+                    full_text = response.content
+                elif str(response).strip():
+                    full_text = str(response)
+            
+            message_placeholder.markdown(full_text if full_text else "I received your message but don't have a specific response.")
+        except Exception as e:
+            # Handle case where streaming fails completely
+            error_msg = f"Error processing request: {str(e)}"
+            message_placeholder.error(error_msg)
+            full_text = error_msg
 
         # ---- post-process assistant message ----
         ts = str(st.session_state.get("_msg_counter", 0))
         st.session_state._msg_counter = int(ts) + 1
 
-        # look for artifact path in the last chunk
+        # look for artifact path in the last chunk (only if streaming worked properly)
         artifact_path = None
-        if "artifact" in event and event["artifact"]:
-            artifact_path = event["artifact"]
+        # Check if event variable exists in local scope and contains artifact info
+        if 'event' in locals() and isinstance(locals()['event'], dict):
+            if "artifact" in locals()['event'] and locals()['event']["artifact"]:
+                artifact_path = locals()['event']["artifact"]
 
         # store message with metadata
         st.session_state.messages.append(
