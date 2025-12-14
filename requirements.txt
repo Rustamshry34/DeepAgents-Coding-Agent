@@ -2,7 +2,7 @@
 deepagents>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.2.0
-langchain-openai>=0.1.0   # keep it in case you swap back to OpenAI
+langchain-ollama>=0.1.0   # keep it in case you swap back to OpenAI
 
 # ---------- LLM (local) ----------
 ollama>=0.2.0             # ChatOllama talks to Ollama REST API
