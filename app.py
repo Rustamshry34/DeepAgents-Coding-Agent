@@ -13,6 +13,9 @@ from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 import os
 
+# Import our persistent memory module
+from memory_agent import get_default_persistent_agent
+
 # ---------- 1.  Tools ----------
 
 # Initialise Tavily client for web search
@@ -460,15 +463,16 @@ reviewer_agent = {
     ),
 }
 
-# ---------- 3.  Main agent ----------
+# ---------- 3.  Main agent with persistent memory ----------
 llm = ChatOllama(
     model="qwen3-coder:30b",
     base_url="http://localhost:11434",
     temperature=0,
 )
 
-agent = create_deep_agent(
-    model=llm,
+# Create agent with persistent memory
+agent, memory_manager = get_default_persistent_agent(
+    llm=llm,
     tools=[
         internet_search, 
         code_executor,
@@ -478,11 +482,6 @@ agent = create_deep_agent(
         cleanup_workspace,
         run_manifest, 
     ],
-    system_prompt=(
-        "You are an advanced coding agent.  You may delegate to planner, coder, "
-        "and reviewer sub-agents.  Always search the web when you lack knowledge. "
-        "Keep answers concise and actionable."
-    ),
     subagents=[planner_agent, coder_agent, reviewer_agent],
 )
 
@@ -531,9 +530,12 @@ if prompt := st.chat_input("Ask me to build or debug anything…"):
         message_placeholder = st.empty()
         full_text = ""
         
+        # Initialize config for the agent with thread ID for persistence
+        config = {"configurable": {"thread_id": "default_thread"}}
+        
         # stream agent response
         try:
-            for event in agent.stream({"messages": [{"role": "user", "content": prompt}]}):
+            for event in agent.stream({"messages": [{"role": "user", "content": prompt}]}, config=config):
                 if "messages" in event:
                     msg = event["messages"][-1]
                     if hasattr(msg, 'role') and hasattr(msg, 'content') and msg.role == "assistant":
@@ -544,7 +546,7 @@ if prompt := st.chat_input("Ask me to build or debug anything…"):
             # Final update with full_text (or a fallback if still empty)
             if not full_text:
                 # Try to get response from the agent directly if streaming didn't work
-                response = agent.invoke({"messages": [{"role": "user", "content": prompt}]})
+                response = agent.invoke({"messages": [{"role": "user", "content": prompt}]}, config=config)
                 
                 # Handle different possible response formats
                 if isinstance(response, dict):

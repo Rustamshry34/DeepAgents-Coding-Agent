@@ -62,7 +62,13 @@ streamlit run app.py
 
 ## Memory 
 
-Coming soon
+The DeepAgents coding assistant now includes persistent memory capabilities that allow the agent to remember conversations and context across sessions. The memory system uses SQLite for local storage and can be configured to use other backends.
+
+Features:
+- Conversations are saved and remembered across sessions
+- Context and state persistence between interactions
+- Thread-based conversation management
+- Configurable storage backends (SQLite by default)
 
 
 
