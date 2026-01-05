@@ -2,6 +2,7 @@ from tavily import TavilyClient
 import subprocess
 import tempfile
 import time
+from datetime import datetime
 import streamlit as st
 import shutil
 from pathlib import Path
@@ -13,8 +14,9 @@ from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 import os
 
-# Import our persistent memory module
+# Import our persistent memory module and enhanced features
 from memory_agent import get_default_persistent_agent
+from enhanced_agent import get_enhanced_agent
 
 # ---------- 1.  Tools ----------
 
@@ -463,15 +465,15 @@ reviewer_agent = {
     ),
 }
 
-# ---------- 3.  Main agent with persistent memory ----------
+# ---------- 3.  Main agent with persistent memory and enhanced features ----------
 llm = ChatOllama(
     model="qwen3-coder:30b",
     base_url="http://localhost:11434",
     temperature=0,
 )
 
-# Create agent with persistent memory
-agent, memory_manager = get_default_persistent_agent(
+# Create enhanced agent with observability, cost tracking, and debugging features
+agent = get_enhanced_agent(
     llm=llm,
     tools=[
         internet_search, 
@@ -483,6 +485,8 @@ agent, memory_manager = get_default_persistent_agent(
         run_manifest, 
     ],
     subagents=[planner_agent, coder_agent, reviewer_agent],
+    max_steps=50,  # Maximum steps per session
+    max_time=3600.0  # Maximum time per session (1 hour)
 )
 
 # ---------- 4.  Streamlit UI ----------
